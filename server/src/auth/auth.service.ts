@@ -78,7 +78,7 @@ export class AuthService {
             }
 
             if(user.isBlocked) {
-                throw new BadRequestException("Your account has been bloced")
+                throw new BadRequestException("Your account has been blocked")
             }
 
             const token = await this.jwtService.signAsync({
