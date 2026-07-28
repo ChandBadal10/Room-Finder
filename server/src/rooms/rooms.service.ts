@@ -1,8 +1,9 @@
-import { BadGatewayException, Injectable } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Room, RoomDocument } from './schemas/room.schema';
 import { Model } from 'mongoose';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
 
 @Injectable()
 export class RoomsService {
@@ -73,6 +74,78 @@ export class RoomsService {
             }
         } catch(error: any) {
             return{
+                success: false,
+                message: "Internal Server Error",
+                error: error.message
+            }
+        }
+    }
+
+
+    //Update Room details
+
+    async updateRoom(roomId: string, updateRoomDto: UpdateRoomDto, userId: string) {
+        try {
+            const room = await this.roomModel.findById(roomId);
+
+            if(!room) {
+                throw new BadRequestException("Room not found")
+            }
+
+            if(room.owner.toString() !== userId) {
+                return {
+                    success: false,
+                    message: "You are not allowed to update this room"
+                };
+
+            }
+
+            const updatedRoom = await this.roomModel.findByIdAndUpdate(roomId, updateRoomDto, {
+                new: true
+            })
+
+            return {
+                success: true,
+                message: "Room update successfully",
+                room: updatedRoom
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                message: "Internal Server Error",
+                error: error.message
+            }
+        }
+    }
+
+    //Delete Room
+    async deleteRoom(userId: string, roomId: string) {
+        try {
+            const room = await this.roomModel.findById(roomId);
+
+            if(!room) {
+                return {
+                    success: false,
+                    message: "Room not found"
+                }
+            }
+
+            //checking ownership
+            if(room.owner.toString() !== userId) {
+                return {
+                    success: false,
+                    message: "You are not allowed to delete this room"
+                }
+            }
+
+            await this.roomModel.findByIdAndDelete(roomId);
+
+            return {
+                success: true,
+                message: "Room deleted successfully"
+            }
+        } catch (error: any) {
+            return {
                 success: false,
                 message: "Internal Server Error",
                 error: error.message

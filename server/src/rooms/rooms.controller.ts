@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/users/schemas/user.schema';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
+import { request } from 'http';
 
 @Controller('rooms')
 export class RoomsController {
@@ -35,5 +37,37 @@ export class RoomsController {
         @Param("id") id: string
     ) {
         return this.roomService.getRoomById(id);
+    }
+
+
+    //Update Room
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.OWNER)
+    @Put(":id")
+    updateRoom(
+        @Param("id") id: string,
+        @Body() updateRoomDto: UpdateRoomDto,
+        @Req() request: any
+    ) {
+        return this.roomService.updateRoom(
+            id,
+            updateRoomDto,
+            request.user.id
+        )
+    }
+
+
+    //Delete Room
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.OWNER)
+    @Delete(":id")
+    deleteRoom(
+        @Param("id") id: string,
+        @Req() request: any,
+    ) {
+        return this.roomService.deleteRoom(
+            request.user.id,
+            id
+        )
     }
 }
