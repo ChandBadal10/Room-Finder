@@ -4,6 +4,7 @@ import { Room, RoomDocument } from './schemas/room.schema';
 import { Model } from 'mongoose';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { SearchRoomDto } from './dto/search-room.dto';
 
 @Injectable()
 export class RoomsService {
@@ -148,6 +149,77 @@ export class RoomsService {
             return {
                 success: false,
                 message: "Internal Server Error",
+                error: error.message
+            }
+        }
+    }
+
+    //Get my rooms
+    async getMyRooms(userId: string) {
+        try {
+            const rooms = await this.roomModel.find({owner: userId});
+
+            return {
+                success: true,
+                message: "My rooms fetched successfully",
+                totalRooms: rooms.length,
+                rooms
+            }
+        }catch(error: any) {
+            return {
+                success: false,
+                message: "Internal Server Error",
+                error: error.message
+            }
+        }
+    }
+
+
+    async searchRooms(searchRoomDto: SearchRoomDto) {
+        try {
+            const {search, city, roomType, minPrice, maxPrice} = searchRoomDto;
+
+            const query: any = {};
+
+            //Search title
+            if(search) {
+                query.title = {
+                    $regex: search,
+                    $options: "i"
+                }
+            }
+
+            //Filter city
+            if(city) {
+                query.city = city;
+            }
+
+            //Filter room type
+            if(roomType) {
+                query.roomType = roomType;
+            }
+
+            //Price filter
+            if(minPrice || maxPrice) {
+                query.price = {};
+            }
+
+            if(maxPrice) {
+                query.price.$lte = Number(maxPrice);
+            }
+
+            const rooms = await this.roomModel.find(query).populate("owner", "fullName phone");
+
+            return {
+                success: true,
+                totalRooms: rooms.length,
+                rooms
+            }
+
+        } catch(error: any) {
+            return {
+                success: false,
+                message: "Internal erver Error",
                 error: error.message
             }
         }
